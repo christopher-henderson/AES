@@ -9,7 +9,7 @@ fn add(a: GF28,b: GF28) -> GF28 {
 	a ^ b
 }
 
-fn multiply(mut a: GF28, mut b: GF28) -> GF28 {
+pub fn multiply(mut a: GF28, mut b: GF28) -> GF28 {
 	let mut p: GF28 = 0;
 	let mut carry;
 	for _ in 0..8 {
