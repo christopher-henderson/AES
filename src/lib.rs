@@ -56,7 +56,12 @@ static SBOX: [u8; 256] = [
 
 // Cipher(byte in[4*Nb], byte out[4*Nb], word w[Nb*(Nr+1)])
 
-pub fn ciper(input: &mut State, w: KeySchedule) {
+pub fn encrypt(input: &mut State, key: [u8; 32]) {
+	let w: KeySchedule = key_expansion(key);
+	cipher(input, w);
+}
+
+fn cipher(input: &mut State, w: KeySchedule) {
 	let mut state = input;
 	add_round_key(state, &w[0..(NB - 1) as usize]);
 	for round in 0..NR - 1 {
@@ -71,11 +76,24 @@ pub fn ciper(input: &mut State, w: KeySchedule) {
 }
 
 fn sub_bytes(state: &mut State) {
-	unimplemented!();
+	for word in state {
+		*word = sub_word(*word);
+	}
 }
 
 fn shift_rows(state: &mut State) {
-	unimplemented!();
+	for r in 1..4 {
+		let mut row: u32 = 0;
+		for column in 0..4 {
+			row |= extract_nth_byte(state[column], r) << (24 - column * 8);
+		}
+		println!("row {}: {:?}", r, row);
+		row = shift_left(row, r);
+		for c in 0..4 {
+			state[c] = clear_nth_byte(state[c], r);
+			state[c] = insert_nth_byte(state[c], extract_nth_byte(row, c), r);
+		}
+	}
 }
 
 fn mix_columns(state: &mut State) {
@@ -123,27 +141,22 @@ fn rot_word(word: Word) -> Word {
 	word << NB | word >> (32 - NB)
 }
 
-// KeyExpansion(byte key[4*Nk], word w[Nb*(Nr+1)], Nk)
-// begin
-// 	word  temp
-// 	i = 0
-// 	while (i < Nk)
-// 		w[i] = word(key[4*i], key[4*i+1], key[4*i+2], key[4*i+3])
-// 		i = i+1
-// 	end while
-// 	i = Nk
-// 	while (i < Nb * (Nr+1)]
-// 		temp = w[i-1]
-// 		if (i mod Nk = 0)
-// 			temp = SubWord(RotWord(temp)) xor Rcon[i/Nk]
-// 		else if (Nk > 6 and i mod Nk = 4)
-// 			temp = SubWord(temp)
-// 		end if
-// 		w[i] = w[i-Nk] xor temp
-// 		i = i + 1
-// 	end while
-// end
 
+fn extract_nth_byte(word: Word, n: usize) -> u32 {
+	((word >> (24 - n*8)) & 0xff) as u32
+}
+
+fn clear_nth_byte(word: Word, n: usize) -> u32 {
+	word & !(0xff << (24 - n*8))
+}
+
+fn insert_nth_byte(word: Word, i: u32, n: usize) -> u32 {
+	word | ((i as u32) << (24 - n * 8))
+}
+
+fn shift_left(block: Word, count: usize) -> Word {
+	block << (count * 8) | block >> (32 - count * 8)
+}
 
 #[cfg(test)]
 mod tests {
@@ -163,5 +176,44 @@ mod tests {
 		assert_eq!(w[5], 0x3b6108d7);
 		assert_eq!(w[6], 0x2d9810a3);
 		assert_eq!(w[7], 0x0914dff4);
+    }
+
+    #[test]
+    fn shift_rows_test() {
+        let mut state = [0x63c0ab20, 0xeb2f30cb, 0x9f93af2b, 0xa092c7a2];
+        let expected = [0x632fafa2, 0xeb93c720, 0x9f92abcb, 0xa0c0302b];
+        shift_rows(&mut state);
+        assert_eq!(state, expected);
+    }
+
+    #[test]
+    fn extract_nth_byte_test() {
+        assert_eq!(extract_nth_byte(0x603deb10, 0), 0x60);
+        assert_eq!(extract_nth_byte(0x603deb10, 1), 0x3d);
+        assert_eq!(extract_nth_byte(0x603deb10, 2), 0xeb);
+        assert_eq!(extract_nth_byte(0x603deb10, 3), 0x10);
+    }
+
+    #[test]
+    fn clear_nth_byte_test() {
+    	assert_eq!(clear_nth_byte(0x603deb10, 0), 0x003deb10);
+        assert_eq!(clear_nth_byte(0x603deb10, 1), 0x6000eb10);
+        assert_eq!(clear_nth_byte(0x603deb10, 2), 0x603d0010);
+        assert_eq!(clear_nth_byte(0x603deb10, 3), 0x603deb00);
+    }
+
+    #[test]
+    fn insert_nth_byte_test() {
+        assert_eq!(insert_nth_byte(clear_nth_byte(0x603deb10, 0), 0xff, 0), 0xff3deb10);
+        assert_eq!(insert_nth_byte(clear_nth_byte(0x603deb10, 1), 0xff, 1), 0x60ffeb10);
+        assert_eq!(insert_nth_byte(clear_nth_byte(0x603deb10, 2), 0xff, 2), 0x603dff10);
+        assert_eq!(insert_nth_byte(clear_nth_byte(0x603deb10, 3), 0xff, 3), 0x603debff);
+    }
+
+    #[test]
+    fn shift_left_test() {
+		assert_eq!(shift_left(0x603deb10, 1), 0x3deb1060);
+		assert_eq!(shift_left(0x603deb10, 2), 0xeb10603d);
+		assert_eq!(shift_left(0x603deb10, 3), 0x10603deb);
     }
 }
