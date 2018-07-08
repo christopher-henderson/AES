@@ -5,3 +5,4 @@ authors = ["christopher-henderson <chris@chenderson.org>"]
 
 [dependencies]
 itertools = "*"
+hex = "*"
