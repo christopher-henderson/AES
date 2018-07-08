@@ -175,18 +175,17 @@ pub fn encrypt(input: &mut State, key: [u8; 32]) {
 	cipher(input, w);
 }
 
-fn cipher(input: &mut State, w: KeySchedule) {
-	let mut state = input;
-	add_round_key(state, &w[0..(NB - 1) as usize]);
-	for round in 0..NR - 1 {
+fn cipher(state: &mut State, w: KeySchedule) {
+	add_round_key(state, &w[0..(NB) as usize]);
+	for round in 0..NR {
 		sub_bytes(state);
 		shift_rows(state);
 		mix_columns(state);
-		add_round_key(state, &w[(round*NB) as usize..((round+1)*NB-1) as usize]);
+		add_round_key(state, &w[(round*NB) as usize..((round+1)*NB) as usize]);
 	}
 	sub_bytes(state);
 	shift_rows(state);
-	add_round_key(state, &w[(NR * NB) as usize..((NR + 1) * NB - 1) as usize]);
+	add_round_key(state, &w[(NR * NB) as usize..((NR + 1) * NB) as usize]);
 }
 
 fn sub_bytes(state: &mut State) {
@@ -214,11 +213,24 @@ fn mix_columns(state: &mut State) {
 		state[column] = mix_column(state[column]);
 	}	
 }
+
 fn mix_column(c: Word) -> Word {
-	let s0: u32 = (GMUL2[extract_nth_byte(c, 0) as usize] ^ GMUL3[extract_nth_byte(c, 1) as usize] ^ extract_nth_byte(c, 2) ^ extract_nth_byte(c, 3)).into();
-	let s1: u32 = (extract_nth_byte(c, 0) ^ GMUL2[extract_nth_byte(c, 1) as usize] ^ GMUL3[extract_nth_byte(c, 2) as usize] ^ extract_nth_byte(c, 3)).into();
-	let s2: u32 = (extract_nth_byte(c, 0) ^ extract_nth_byte(c, 1) ^ GMUL2[extract_nth_byte(c, 2) as usize] ^ GMUL3[extract_nth_byte(c, 3) as usize]).into();
-	let s3: u32 = (GMUL3[extract_nth_byte(c, 0) as usize] ^ extract_nth_byte(c, 1) ^ extract_nth_byte(c, 2) ^ GMUL2[extract_nth_byte(c, 3) as usize]).into();
+	let s0: u32 = (GMUL2[extract_nth_byte(c, 0) as usize] ^ 
+					GMUL3[extract_nth_byte(c, 1) as usize] ^ 
+					extract_nth_byte(c, 2) ^ 
+					extract_nth_byte(c, 3)).into();
+	let s1: u32 = (extract_nth_byte(c, 0) ^ 
+					GMUL2[extract_nth_byte(c, 1) as usize] ^
+					GMUL3[extract_nth_byte(c, 2) as usize] ^
+					extract_nth_byte(c, 3)).into();
+	let s2: u32 = (extract_nth_byte(c, 0) ^ 
+					extract_nth_byte(c, 1) ^ 
+					GMUL2[extract_nth_byte(c, 2) as usize] ^ 
+					GMUL3[extract_nth_byte(c, 3) as usize]).into();
+	let s3: u32 = (GMUL3[extract_nth_byte(c, 0) as usize] ^ 
+					extract_nth_byte(c, 1) ^ 
+					extract_nth_byte(c, 2) ^ 
+					GMUL2[extract_nth_byte(c, 3) as usize]).into();
 	(s0 << 24 | s1 << 16 | s2 << 8 | s3).into()
 }
 
@@ -284,6 +296,8 @@ fn shift_left(block: Word, count: usize) -> Word {
 mod tests {
 
 	use super::*;
+	extern crate itertools;
+	use tests::itertools::Itertools;
 
     #[test]
     fn key_expansion_test() {
@@ -342,5 +356,13 @@ mod tests {
     #[test]
     fn mix_column_test() {
         assert_eq!(mix_column(0xd4bf5d30), 0x046681e5);
+    }
+
+    #[test]
+    fn encrypt_test() {
+        let key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f];
+        let mut plaintext = [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff];
+        encrypt(&mut plaintext, key);
+        println!("{:02x}", plaintext.iter().format(""));
     }
 }
