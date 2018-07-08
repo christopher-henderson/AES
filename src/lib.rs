@@ -4,10 +4,6 @@ extern crate hex;
 
 mod gf28;
 
-// const INPUT_BLOCK_LENGTH: u8 = 128;
-// const OUTPUT_BLOCK_LENGTH: u8 = 128;
-// const STATE_LENGTH: u8 = 128;
-// const KEY_LENGTH: u32 = 256;
 const NB: usize = 4;
 const NK: usize = 8;
 const NR: usize = 14;
@@ -15,7 +11,7 @@ const NR: usize = 14;
 type Word = u32;
 type State = [u32; NB as usize];
 type Key = u32;
-type KeySchedule = [Key; (NB * (NR + 1)) as usize];
+type KeySchedule = [Key; NB * (NR + 1)];
 
 // https://en.wikipedia.org/wiki/Rijndael_key_schedule#Rcon
 static RCON:[u32; 14] = [0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab];
@@ -114,7 +110,7 @@ fn shift_rows(state: &mut State) {
 		row = shift_left(row, r);
 		for c in 0..4 {
 			state[c] = clear_nth_byte(state[c], r);
-			state[c] = insert_nth_byte(state[c], extract_nth_byte(row, c) as u32, r);
+			state[c] = insert_nth_byte(clear_nth_byte(state[c], r), extract_nth_byte(row, c) as u32, r);
 		}
 	}
 }
@@ -185,7 +181,6 @@ fn rot_word(word: Word) -> Word {
 	word << 8 | word >> 24
 }
 
-
 fn extract_nth_byte(word: Word, n: usize) -> u8 {
 	((word >> (24 - n*8)) & 0xff) as u8
 }
@@ -206,9 +201,8 @@ fn shift_left(block: Word, count: usize) -> Word {
 mod tests {
 
 	use super::*;
-	extern crate itertools;
-	use tests::itertools::Itertools;
 	use std::u32;
+	extern crate test;
 
 	// Test vector from FIPS 197 A.3
 	// http://www.csrc.nist.gov/publications/fips/fips197/fips-197.pdf
@@ -313,8 +307,6 @@ mod tests {
 		let mut key: [u8; 32] = [0; 32];
 		key.copy_from_slice(&tmp[..]);
 		let w: KeySchedule = key_expansion(key);
-		// let mut state: State = hex_to_u32arr("00112233445566778899aabbccddeeff");
-		// let mut state = i64::from_str_radix("00112233445566778899aabbccddeeff", 16);
 		let plaintext = "00112233445566778899aabbccddeeff";
 		let mut state = hex_to_u32arr(plaintext);
 
@@ -328,14 +320,10 @@ mod tests {
     #[test]
     fn encrypt_test() {
         let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
-        // let mut plaintext = "00112233445566778899aabbccddeeff".as_bytes();
-
-
         let plaintext = "00112233445566778899aabbccddeeff";
-        // let mut plaintext = [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff];
         let mut plaintext = hex_to_u32arr(plaintext);
         encrypt(&mut plaintext, key);
-        println!("{:02x}", plaintext.iter().format(""));
+        assert_eq!(plaintext,hex_to_u32arr("8ea2b7ca516745bfeafc49904b496089"));
     }
 
     const START: usize = 0;   
@@ -355,44 +343,43 @@ mod tests {
 		let plaintext = "00112233445566778899aabbccddeeff";
 		let mut state = hex_to_u32arr(plaintext);
 		
-		let test_table = init_test_table();
-		let round0 = [
-			hex_to_u32arr("00112233445566778899aabbccddeeff"),
-			hex_to_u32arr("000102030405060708090a0b0c0d0e0f"),
-		];
-		let round14 = [
-			hex_to_u32arr("627bceb9999d5aaac945ecf423f56da5"),
-			hex_to_u32arr("aa218b56ee5ebeacdd6ecebf26e63c06"),
-			hex_to_u32arr("aa5ece06ee6e3c56dde68bac2621bebf"),
-			hex_to_u32arr("24fc79ccbf0979e9371ac23c6d68de36"),
-			hex_to_u32arr("8ea2b7ca516745bfeafc49904b496089"),
-		];
-		// println!("{:?}", &w[..]);
-		assert_eq!(state, round0[0]);
-		assert_eq!(&w[0..NB], round0[1]);
+		let test_table = init_debug_test_table();
+
+		println!("round 0");
+		assert_eq!(state, test_table[0][0]);
+		assert_eq!(&w[0..NB], test_table[0][1]);
         add_round_key(&mut state, &w[0..NB]);
 		for round in 1..NR {
+			// -- nocapture for figuring out which round failed.
 			println!("round {:?}", round);
 			assert_eq!(state, test_table[round][START]);
+
 			sub_bytes(&mut state);
 			assert_eq!(state, test_table[round][S_BOX]);
+
 			shift_rows(&mut state);
 			assert_eq!(state, test_table[round][S_ROW]);
+
 			mix_columns(&mut state);
 			assert_eq!(state, test_table[round][M_COL]);
-			println!("{} to {}", round*NB, (round+1)*NB);
-			assert_eq!(&w[round*NB..(round+1)*NB], test_table[round][K_SCH]);
-			// AddRoundKey(state, w[round*Nb, (round+1)*Nb-1])
+
 			add_round_key(&mut state, &w[round*NB..(round+1)*NB]);
+			assert_eq!(&w[round*NB..(round+1)*NB], test_table[round][K_SCH]);
 		}
-		assert_eq!(state, round14[0]);
+		println!("round 14");
+		assert_eq!(state, test_table[14][0]);
+		
 		sub_bytes(&mut state);
-		assert_eq!(state, round14[1]);
+		assert_eq!(state, test_table[14][1]);
+		
 		shift_rows(&mut state);
-		assert_eq!(state, round14[2]);
-		assert_eq!(&w[NR*NB..(NR + 1)*NB], round14[3]);
+		assert_eq!(state, test_table[14][2]);
+		
 		add_round_key(&mut state, &w[NR*NB..(NR + 1)*NB]);
-		assert_eq!(state, round14[4]);
+		assert_eq!(&w[NR*NB..(NR + 1)*NB], test_table[14][3]);
+
+		// Final state
+		assert_eq!(state, test_table[14][4]);
     }
 
     fn hex_to_u32arr(hx: &str) -> [u32; 4] {
@@ -403,10 +390,17 @@ mod tests {
 		state
     }
 
-    fn init_test_table() -> [[[u32; 4]; 5]; 14] {
+    fn init_debug_test_table() -> [[[u32; 4]; 5]; 15] {
+    	// Test vectors from FIPS 197 C.3
+    	// Builds assertion vectors from round [1, 13]. Rounds 0 and 4
+    	// are considered seperately.
     	[	
+    		// Round 0 is a special case of the initial plaintext
+    		// vector and the round key only.
     		[
-    			[0,0,0,0], [0,0,0,0] ,[0,0,0,0] ,[0,0,0,0] ,[0,0,0,0]
+    			hex_to_u32arr("00112233445566778899aabbccddeeff"), 
+    			hex_to_u32arr("000102030405060708090a0b0c0d0e0f"),
+    			[0,0,0,0] ,[0,0,0,0], [0,0,0,0]
     		],
 			[
 				hex_to_u32arr("00102030405060708090a0b0c0d0e0f0"),
@@ -498,7 +492,62 @@ mod tests {
 				hex_to_u32arr("d1ed44fd1a0f3f2afa4ff27b7c332a69"),
 				hex_to_u32arr("2c21a820306f154ab712c75eee0da04f"),
 				hex_to_u32arr("4e5a6699a9f24fe07e572baacdf8cdea"),
+			],
+				// Round 14 is a special case in that it includes the final
+				// output and does not have a mix columns.
+			[
+				hex_to_u32arr("627bceb9999d5aaac945ecf423f56da5"), // Start
+				hex_to_u32arr("aa218b56ee5ebeacdd6ecebf26e63c06"), // Sub bytes
+				hex_to_u32arr("aa5ece06ee6e3c56dde68bac2621bebf"), // Shift rows
+				hex_to_u32arr("24fc79ccbf0979e9371ac23c6d68de36"), // Round key
+				hex_to_u32arr("8ea2b7ca516745bfeafc49904b496089"), // Final output
 			]
 		]
+    }
+
+    #[bench]
+    fn cipher_bench(b: &mut test::Bencher) {
+    	let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+    	let tmp = hex::decode(key).unwrap();
+		let mut key: [u8; 32] = [0; 32];
+		key.copy_from_slice(&tmp[..]);
+		let w: KeySchedule = key_expansion(key);
+		let plaintext = hex_to_u32arr("00112233445566778899aabbccddeeff");
+        b.iter(|| {
+	        cipher(&mut plaintext.clone(), w);
+    	})
+    }
+
+    #[bench]
+    fn shift_rows_bench(b: &mut test::Bencher) {
+        b.iter(|| {
+        	let mut state = [0x63c0ab20, 0xeb2f30cb, 0x9f93af2b, 0xa092c7a2];
+	        shift_rows(&mut state);
+    	})
+    }
+
+    #[bench]
+    fn add_round_key_bench(b: &mut test::Bencher) {
+    	let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+    	let tmp = hex::decode(key).unwrap();
+		let mut key: [u8; 32] = [0; 32];
+		key.copy_from_slice(&tmp[..]);
+		let w = key_expansion(key);
+		let mut state = hex_to_u32arr("00112233445566778899aabbccddeeff");
+        b.iter(move || {
+        	add_round_key(&mut state, &w[0..NB]);
+        })
+    }
+
+    #[bench]
+    fn mix_column_bench(b: &mut test::Bencher) {
+        b.iter(|| mix_column(0xd4bf5d30))
+    }
+
+    #[bench]
+    fn mix_columns_bench(b: &mut test::Bencher) {
+        b.iter(|| {
+			mix_columns(&mut [0xdb135345, 0xf20a225c, 0x01010101, 0xc6c6c6c6]);
+        })
     }
 }
