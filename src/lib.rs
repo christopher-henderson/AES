@@ -1,13 +1,13 @@
 #![feature(test)]
 mod gf28;
 
-const INPUT_BLOCK_LENGTH: u8 = 128;
-const OUTPUT_BLOCK_LENGTH: u8 = 128;
-const STATE_LENGTH: u8 = 128;
-const NB: u8 = 4;
-const KEY_LENGTH: u32 = 256;
-const NK: u8 = 8;
-const NR: u8 = 14;
+// const INPUT_BLOCK_LENGTH: u8 = 128;
+// const OUTPUT_BLOCK_LENGTH: u8 = 128;
+// const STATE_LENGTH: u8 = 128;
+// const KEY_LENGTH: u32 = 256;
+const NB: usize = 4;
+const NK: usize = 8;
+const NR: usize = 14;
 
 type Word = u32;
 type State = [u32; NB as usize];
@@ -176,16 +176,16 @@ pub fn encrypt(input: &mut State, key: [u8; 32]) {
 }
 
 fn cipher(state: &mut State, w: KeySchedule) {
-	add_round_key(state, &w[0..(NB) as usize]);
+	add_round_key(state, &w[0..NB]);
 	for round in 0..NR {
 		sub_bytes(state);
 		shift_rows(state);
 		mix_columns(state);
-		add_round_key(state, &w[(round*NB) as usize..((round+1)*NB) as usize]);
+		add_round_key(state, &w[round*NB..(round+1)*NB]);
 	}
 	sub_bytes(state);
 	shift_rows(state);
-	add_round_key(state, &w[(NR * NB) as usize..((NR + 1) * NB) as usize]);
+	add_round_key(state, &w[NR*NB..(NR + 1)*NB]);
 }
 
 fn sub_bytes(state: &mut State) {
@@ -236,7 +236,7 @@ fn mix_column(c: Word) -> Word {
 
 fn add_round_key(state: &mut State, w: &[Key]) {
 	for c in 0..NB {
-		state[c as usize] ^= w[c as usize];
+		state[c] ^= w[c];
 	}
 }
 
@@ -245,15 +245,15 @@ fn key_expansion(key: [u8; (4 * NK) as usize]) -> KeySchedule {
 	let mut temp: Word;
 	for i in 0..NK {
 		w[i as usize] = (
-			(key[(4*i) as usize] as u32) << 24 | 
-			(key[(4*i+1) as usize] as u32) << 16 | 
-			(key[(4*i+2) as usize] as u32) << 8 | 
-			(key[(4*i+3) as usize] as u32)).into();
+			(key[(4*i)] as u32) << 24 | 
+			(key[(4*i+1)] as u32) << 16 | 
+			(key[(4*i+2)] as u32) << 8 | 
+			(key[(4*i+3)] as u32)).into();
 	}
 	for i in NK..NB * (NR + 1) {
 		temp = w[(i - 1) as usize];
 		temp = if i % NK == 0 {
-			sub_word(rot_word(temp)) ^ RCON[(i/NK) as usize] as Word
+			sub_word(rot_word(temp)) ^ RCON[(i/NK)] as Word
 		} else {
 			sub_word(temp)
 		};
