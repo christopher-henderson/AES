@@ -2,7 +2,7 @@
 
 This crate implements AES-256 as defined by FIPS 197.
 
-AES is a 128-bit block cipher originally called Rijandael.
+AES is a 128-bit block cipher originally called Rijndael.
 
 The NIST publication describing AES can be found on the [NIST website](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.197.pdf)
 
