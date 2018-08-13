@@ -11,6 +11,8 @@ Unit tests are provided, including step-by-step test vectors found in FIPS 197 C
 ## Should I `extern` this crate?
 ![Crypto Hipster](https://raw.githubusercontent.com/christopher-henderson/AES/master/2fppk8.jpg)
 
+Normally I wouldn't even write a disclaimer - you are, after all, the ruler of your own destiny. But this one is serious.
+
 Please don't. _PLEASE_ don't. I've had plenty of fun reading and implementing this, and it does indeed pass the test vectors listed in FIPS 197, but I just cannot overemphasize how much of a bad idea it would be to use this for anything other than didactic purposes. Let us count all of the ways that this is a bad idea:
 
 * Endianness is a concern in AES, but endianness is _NOT_ yet addressed by this code.
