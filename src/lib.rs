@@ -395,10 +395,10 @@ fn shift_rows(state: &mut State) {
 }
 
 fn shift_row(state: &mut State, r: usize) {
-    let mut row: u32 = (state[0] >> 24 - r * 8 & 0xff) << 24
-        | (state[1] >> 24 - r * 8 & 0xff) << 16
-        | (state[2] >> 24 - r * 8 & 0xff) << 8
-        | (state[3] >> 24 - r * 8 & 0xff);
+    let mut row: u32 = (state[0] >> (24 - r * 8) as u32 & 0xff) << 24
+        | (state[1] >> (24 - r * 8) as u32 & 0xff) << 16
+        | (state[2] >> (24 - r * 8) as u32 & 0xff) << 8
+        | (state[3] >> (24 - r * 8) as u32 & 0xff);
     row = shift_left(row, r);
     /*
     for c in 0..4 {
@@ -408,20 +408,20 @@ fn shift_row(state: &mut State, r: usize) {
     }
     */
     let byte = (row >> (24)) & 0xff;
-    let cleared = state[0] & !(0xff << 24 - r * 8);
-    state[0] = cleared | (byte << 24 - r * 8);
+    let cleared = state[0] & !(0xff << 24 - r * 8) as u32;
+    state[0] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 8)) & 0xff;
-    let cleared = state[1] & !(0xff << 24 - r * 8);
-    state[1] = cleared | (byte << 24 - r * 8);
+    let cleared = state[1] & !(0xff << 24 - r * 8) as u32;
+    state[1] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 2 * 8)) & 0xff;
-    let cleared = state[2] & !(0xff << 24 - r * 8);
-    state[2] = cleared | (byte << 24 - r * 8);
+    let cleared = state[2] & !(0xff << 24 - r * 8) as u32;
+    state[2] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 3 * 8)) & 0xff;
-    let cleared = state[3] & !(0xff << 24 - r * 8);
-    state[3] = cleared | (byte << 24 - r * 8);
+    let cleared = state[3] & !(0xff << 24 - r * 8) as u32;
+    state[3] = cleared | (byte << (24 - r * 8) as u32);
 }
 
 fn inv_shift_rows(state: &mut State) {
@@ -431,10 +431,10 @@ fn inv_shift_rows(state: &mut State) {
 }
 
 fn inv_shift_row(state: &mut State, r: usize) {
-    let mut row: u32 = (state[0] >> 24 - r * 8 & 0xff) << 24
-        | (state[1] >> 24 - r * 8 & 0xff) << 16
-        | (state[2] >> 24 - r * 8 & 0xff) << 8
-        | (state[3] >> 24 - r * 8 & 0xff);
+    let mut row: u32 = (state[0] >> (24 - r * 8) as u32 & 0xff) << 24
+        | (state[1] >> (24 - r * 8) as u32 & 0xff) << 16
+        | (state[2] >> (24 - r * 8) as u32 & 0xff) << 8
+        | (state[3] >> (24 - r * 8) as u32 & 0xff);
     row = shift_left(row, NB - r);
     /*
     for c in 0..4 {
@@ -444,20 +444,20 @@ fn inv_shift_row(state: &mut State, r: usize) {
     }
     */
     let byte = (row >> (24)) & 0xff;
-    let cleared = state[0] & !(0xff << 24 - r * 8);
-    state[0] = cleared | (byte << 24 - r * 8);
+    let cleared = state[0] & !(0xff << 24 - r * 8) as u32;
+    state[0] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 8)) & 0xff;
-    let cleared = state[1] & !(0xff << 24 - r * 8);
-    state[1] = cleared | (byte << 24 - r * 8);
+    let cleared = state[1] & !(0xff << 24 - r * 8) as u32;
+    state[1] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 2 * 8)) & 0xff;
-    let cleared = state[2] & !(0xff << 24 - r * 8);
-    state[2] = cleared | (byte << 24 - r * 8);
+    let cleared = state[2] & !(0xff << 24 - r * 8) as u32;
+    state[2] = cleared | (byte << (24 - r * 8) as u32);
 
     let byte = (row >> (24 - 3 * 8)) & 0xff;
-    let cleared = state[3] & !(0xff << 24 - r * 8);
-    state[3] = cleared | (byte << 24 - r * 8);
+    let cleared = state[3] & !(0xff << 24 - r * 8) as u32;
+    state[3] = cleared | (byte << (24 - r * 8) as u32);
 }
 
 fn mix_columns(state: &mut State) {
@@ -537,7 +537,7 @@ fn rot_word(word: Word) -> Word {
 }
 
 fn shift_left(block: Word, count: usize) -> Word {
-    block << (count * 8) | block >> (32 - count * 8)
+    block << (count * 8) as u32 | block >> (32 - count * 8) as u32
 }
 
 #[cfg(test)]
