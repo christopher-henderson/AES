@@ -1,5 +1,5 @@
 #![feature(test)]
-
+#![no_std]
 extern crate hex;
 
 const NB: usize = 4;
@@ -186,26 +186,176 @@ pub fn decrypt(input: &mut State, key: &str) {
 }
 
 fn cipher(state: &mut State, w: KeySchedule) {
-    add_round_key(state, &w[0..NB]);
-    for round in 1..NR {
+    /*
+        Before unrolling the loop, the following is the much more
+        compact algorithm that tracks closely with the FIPS 197 definition.
+
+        add_round_key(state, &w[0..NB]);
+        for round in 1..NR {
+            sub_bytes(state);
+            shift_rows(state);
+            mix_columns(state);
+            add_round_key(state, &w[round * NB..(round + 1) * NB]);
+        }
         sub_bytes(state);
         shift_rows(state);
-        mix_columns(state);
-        add_round_key(state, &w[round * NB..(round + 1) * NB]);
-    }
+        add_round_key(state, &w[NR * NB..(NR + 1) * NB]);
+    */
+    add_round_key(state, &w[0..NB]);
+
     sub_bytes(state);
     shift_rows(state);
-    add_round_key(state, &w[NR * NB..(NR + 1) * NB]);
+    mix_columns(state);
+    add_round_key(state, &w[1 * NB..2 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[2 * NB..3 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[3 * NB..4 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[4 * NB..5 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[5 * NB..6 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[6 * NB..7 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[7 * NB..8 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[8 * NB..9 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[9 * NB..10 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[10 * NB..11 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[11 * NB..12 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[12 * NB..13 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(state, &w[13 * NB..14 * NB]);
+
+    sub_bytes(state);
+    shift_rows(state);
+    add_round_key(state, &w[14 * NB..15 * NB]);
 }
 
 fn inv_cipher(state: &mut State, w: KeySchedule) {
-    add_round_key(state, &w[NR * NB..(NR + 1) * NB]);
-    for round in (1..NR).rev() {
+    /*
+        Before unrolling the loop, the following is the much more
+        compact algorithm that tracks closely with the FIPS 197 definition.
+
+        add_round_key(state, &w[NR * NB..(NR + 1) * NB]);
+        for round in (1..NR).rev() {
+            inv_shift_rows(state);
+            inv_sub_bytes(state);
+            add_round_key(state, &w[round * NB..(round + 1) * NB]);
+            inv_mix_columns(state);;
+        }
         inv_shift_rows(state);
         inv_sub_bytes(state);
-        add_round_key(state, &w[round * NB..(round + 1) * NB]);
-        inv_mix_columns(state);;
-    }
+        add_round_key(state, &w[0..NB]);
+    */
+    add_round_key(state, &w[NR * NB..(NR + 1) * NB]);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[13 * NB..14 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[12 * NB..13 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[11 * NB..12 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[10 * NB..11 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[9 * NB..10 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[8 * NB..9 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[7 * NB..8 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[6 * NB..7 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[5 * NB..8 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[4 * NB..5 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[3 * NB..4 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[2 * NB..3 * NB]);
+    inv_mix_columns(state);
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, &w[1 * NB..2 * NB]);
+    inv_mix_columns(state);
+
     inv_shift_rows(state);
     inv_sub_bytes(state);
     add_round_key(state, &w[0..NB]);
@@ -225,22 +375,23 @@ fn sub_word(word: Word) -> Word {
 }
 
 fn inv_sub_bytes(state: &mut State) {
-    for word in state {
-        *word = inv_sub_word(*word);
-    }
+    inv_sub_word(&mut state[0]);
+    inv_sub_word(&mut state[1]);
+    inv_sub_word(&mut state[2]);
+    inv_sub_word(&mut state[3]);
 }
 
-fn inv_sub_word(word: Word) -> Word {
-    INV_SBOX[(word >> 24) as usize] << 24
-        | INV_SBOX[(word >> 16 & 0xff) as usize] << 16
-        | INV_SBOX[(word >> 8 & 0xff) as usize] << 8
-        | INV_SBOX[(word & 0xff) as usize]
+fn inv_sub_word(word: &mut Word) {
+    *word = INV_SBOX[(*word >> 24) as usize] << 24
+        | INV_SBOX[(*word >> 16 & 0xff) as usize] << 16
+        | INV_SBOX[(*word >> 8 & 0xff) as usize] << 8
+        | INV_SBOX[(*word & 0xff) as usize]
 }
 
 fn shift_rows(state: &mut State) {
-    for r in 1..4 {
-        shift_row(state, r);
-    }
+    shift_row(state, 1);
+    shift_row(state, 2);
+    shift_row(state, 3);
 }
 
 fn shift_row(state: &mut State, r: usize) {
@@ -249,17 +400,34 @@ fn shift_row(state: &mut State, r: usize) {
         | (state[2] >> 24 - r * 8 & 0xff) << 8
         | (state[3] >> 24 - r * 8 & 0xff);
     row = shift_left(row, r);
+    /*
     for c in 0..4 {
         let byte = (row >> (24 - c * 8)) & 0xff;
         let cleared = state[c] & !(0xff << 24 - r * 8);
         state[c] = cleared | (byte << 24 - r * 8);
     }
+    */
+    let byte = (row >> (24)) & 0xff;
+    let cleared = state[0] & !(0xff << 24 - r * 8);
+    state[0] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 8)) & 0xff;
+    let cleared = state[1] & !(0xff << 24 - r * 8);
+    state[1] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 2 * 8)) & 0xff;
+    let cleared = state[2] & !(0xff << 24 - r * 8);
+    state[2] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 3 * 8)) & 0xff;
+    let cleared = state[3] & !(0xff << 24 - r * 8);
+    state[3] = cleared | (byte << 24 - r * 8);
 }
 
 fn inv_shift_rows(state: &mut State) {
-    for r in 1..4 {
-        inv_shift_row(state, r);
-    }
+    inv_shift_row(state, 1);
+    inv_shift_row(state, 2);
+    inv_shift_row(state, 3);
 }
 
 fn inv_shift_row(state: &mut State, r: usize) {
@@ -268,17 +436,35 @@ fn inv_shift_row(state: &mut State, r: usize) {
         | (state[2] >> 24 - r * 8 & 0xff) << 8
         | (state[3] >> 24 - r * 8 & 0xff);
     row = shift_left(row, NB - r);
+    /*
     for c in 0..4 {
         let byte = (row >> (24 - c * 8)) & 0xff;
         let cleared = state[c] & !(0xff << 24 - r * 8);
         state[c] = cleared | (byte << 24 - r * 8);
     }
+    */
+    let byte = (row >> (24)) & 0xff;
+    let cleared = state[0] & !(0xff << 24 - r * 8);
+    state[0] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 8)) & 0xff;
+    let cleared = state[1] & !(0xff << 24 - r * 8);
+    state[1] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 2 * 8)) & 0xff;
+    let cleared = state[2] & !(0xff << 24 - r * 8);
+    state[2] = cleared | (byte << 24 - r * 8);
+
+    let byte = (row >> (24 - 3 * 8)) & 0xff;
+    let cleared = state[3] & !(0xff << 24 - r * 8);
+    state[3] = cleared | (byte << 24 - r * 8);
 }
 
 fn mix_columns(state: &mut State) {
-    for column in 0..4 {
-        state[column] = mix_column(state[column]);
-    }
+    state[0] = mix_column(state[0]);
+    state[1] = mix_column(state[1]);
+    state[2] = mix_column(state[2]);
+    state[3] = mix_column(state[3]);
 }
 
 fn mix_column(c: Word) -> Word {
@@ -299,9 +485,10 @@ fn mix_column(c: Word) -> Word {
 }
 
 fn inv_mix_columns(state: &mut State) {
-    for column in 0..4 {
-        state[column] = inv_mix_column(state[column]);
-    }
+    state[0] = inv_mix_column(state[0]);
+    state[1] = inv_mix_column(state[1]);
+    state[2] = inv_mix_column(state[2]);
+    state[3] = inv_mix_column(state[3]);
 }
 
 fn inv_mix_column(c: Word) -> Word {
@@ -318,9 +505,10 @@ fn inv_mix_column(c: Word) -> Word {
 }
 
 fn add_round_key(state: &mut State, w: &[Key]) {
-    for c in 0..NB {
-        state[c] ^= w[c];
-    }
+    state[0] ^= w[0];
+    state[1] ^= w[1];
+    state[2] ^= w[2];
+    state[3] ^= w[3];
 }
 
 fn key_expansion(key: [u8; (4 * NK)]) -> KeySchedule {
@@ -356,9 +544,10 @@ fn shift_left(block: Word, count: usize) -> Word {
 mod tests {
 
     use super::*;
-    use std::fs;
-    use std::u32;
+    extern crate std;
     extern crate test;
+    use self::std::u32;
+    use self::std::println;
 
     // Test vector from FIPS 197 A.3
     // http://www.csrc.nist.gov/publications/fips/fips197/fips-197.pdf
@@ -881,44 +1070,5 @@ mod tests {
         b.iter(|| {
             mix_columns(&mut [0xdb135345, 0xf20a225c, 0x01010101, 0xc6c6c6c6]);
         })
-    }
-
-    #[test]
-    fn whole_file() {
-        let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
-        let tmp = hex::decode(key).unwrap();
-        let mut key: [u8; 32] = [0; 32];
-        key.copy_from_slice(&tmp[..]);
-        let w: KeySchedule = key_expansion(key);
-
-        let f: std::vec::Vec<u8> =
-            fs::read("/Users/chris/Documents/personal/rust/projects/AES/Cargo.toml").unwrap();
-        let f: std::vec::Vec<u32> = f[..]
-            .chunks(4)
-            .map(|chunk| {
-                let mut ret = 0;
-                for (i, c) in chunk.iter().enumerate() {
-                    ret |= (*c as u32) << 24 - 8 * i;
-                }
-                ret
-            })
-            .collect();
-
-        let mut output: std::vec::Vec<u8> = std::vec::Vec::with_capacity(f.len());
-        for chunk in f[..].chunks(4) {
-            let mut state: State = [chunk[0], chunk[1], chunk[2], chunk[3]];
-            cipher(&mut state, w);
-            for column in state.iter() {
-                output.push((column >> 24) as u8);
-                output.push((column >> 16 & 0xff as u32) as u8);
-                output.push((column >> 8 & 0xff as u32) as u8);
-                output.push((column & 0xff as u32) as u8);
-            }
-        }
-
-        fs::write(
-            "/Users/chris/Documents/personal/rust/projects/AES/data/please",
-            output,
-        ).unwrap();
     }
 }
